@@ -1,0 +1,3 @@
+For documentation, see
+<a href="http://github.com/shriram/p4p/blob/master/doc/manifesto.html">the manifesto</a>.
+
