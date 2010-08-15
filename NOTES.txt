@@ -1,0 +1,37 @@
+stx->list can return #f (documentation says its return type is list?)
+
+-----
+
+Racket is the new JavaScript.  In JavaScript:
+
+<example from talk>
+
+In Racket:
+
+> (define (f g)
+    (define g g)
+    g)
+> (f 3)
+#<undefined>
+
+-----
+
+The docs are contradictory.  They say:
+
+  (stx-car v) -> any
+    v : stx-pair?
+
+  Takes the car of a _syntax_pair_.
+
+But clicking on the link says
+
+  A syntax pair is a pair containing a syntax object as its first
+  element, and [... the rest ...]
+
+So why would STX-CAR return any rather a syntax object?
+
+The contract for STX-CDR is similarly much broader than necessary, but
+the problem is even more egregious for STX-CAR.
+
+-----
+
