@@ -111,9 +111,9 @@ equal?(k(), empty)
 deffun: d/dx(f) =
   defvar: delta = 0.001
   fun: (x) in:
-    /(-(f(+(x, delta)),
-        f(x)),
-      delta)
+    div(sub(f(add(x, delta)),
+            f(x)),
+        delta)
 
 defvar: d/dx-of-square = d/dx(fun: (x) in: *(x,x))
 numeq(round(d/dx-of-square(10)), 20.0)
