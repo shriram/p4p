@@ -67,11 +67,11 @@ Before we dive into details, let's see some running P4P programs.  I intentional
 First, a few variable and function definitions:
 @codedisp{
 defvar: m = 10
-defvar: this-better-be-6 = +(1, 2, 3)
-defvar: this-better-be-0 = +()
+defvar: this-better-be-6 = add(1, 2, 3)
+defvar: this-better-be-0 = add()
 deffun: five() = 5
-deffun: trpl(x) = +(x, x, x)
-deffun: g(a, b, c) = +(a, b, c)
+deffun: trpl(x) = add(x, x, x)
+deffun: g(a, b, c) = add(a, b, c)
 }
 Commas---yes, commas! We'll have more to say about them below.
 
@@ -80,23 +80,23 @@ Anonymous functions:
 deffun: d/dx(f) =
   defvar: delta = 0.001
   fun: (x) in:
-    /(-(f(+(x, delta)),
-        f(x)),
-      delta)
+    div(sub(f(add(x, delta)),
+            f(x)),
+        delta)
 }
 Conditionals:
 @codedisp{
 deffun: fib(n) =
-  if: =(n, 0)
+  if: numeq(n, 0)
     1
-  elif: =(n, 1)
+  elif: numeq(n, 1)
     1
   else:
-    +(fib(sub1(n)), fib(-(n, 2)))
+    add(fib(sub1(n)), fib(sub(n, 2)))
 }
 Structures:
 @codedisp{
-defstruct: memo (key, ans)
+defstruct: memo has: (key, ans)
 }
 Sequencing (look for @code{do:}):
 @codedisp{
@@ -118,7 +118,7 @@ deffun: memoize (f) =
 }
 Expressions in function position:
 @codedisp{
-defvar: this-better-be-9 = (fun: (n) in: *(n, n))(3)
+defvar: this-better-be-9 = {fun: (n) in: mult(n, n)}(3)
 }
 Local bindings:
 @codedisp{
@@ -128,7 +128,7 @@ let:
  in:
   +(x, y)
   
-let*: x = 3, y = x in: +(x, y)
+let*: x = 3, y = x in: add(x, y)
 
 letrec: even = fun: (n) in: if: zero?(n) true else: odd?(sub1(n)),
         odd = fun: (n) in:
@@ -151,11 +151,11 @@ This results in a pleasant invariant about parenthetical structure. In Racket, S
 @codedisp{
         (+ (memofib (sub1 n)) (memofib (- n 2)))]))))
 }
-whereas the equivalent in P4P (using @code{if:}s and @code{elif:}s in place of Racket's @code{cond}) ends in
+whereas the equivalent in P4P (using @code{if:}s and @code{elif:}s in place of Racket's @code{cond}) ends (using the same operators, though P4P also defines @code{add} and @code{sub}) in
 @codedisp{
         +(memofib(sub1(n)), memofib(-(n, 2))))
 }
-(The one parenthesis not accounted for on this line itself is the invocation of @code{memoize}.) 
+(The one parenthesis not accounted for on this line itself is the invocation of @code{memoize}.)
 
 Those old enough to remember Pascal will know this isn't the whole story.  Pascal enabled programming language course instructors to ask students such world-class exam questions as the value of
 @codedisp{
@@ -228,8 +228,8 @@ There are many syntactic embellishments in P4P.
                 In particular, they emphasize the substitution nature of these definitions.}
            
           @item{There is no @code{=} in @code{fun:}; I chose @code{in:} instead.  This is because the argument list
-                does not equal the body, but rather is bound in it.  The choice of @code{in} is thus not entirely whimsical,
-                but is very open to improvement.}
+                does not equal the body, but rather is bound in it.  The choice of @code{in:} is thus not entirely whimsical,
+                but is very open to improvement.  Likewise, there is no @code{=} in @code{defstruct:}, but instead @code{has:}, to emphasize that a structure @italic{has} the following fields.}
 
            @item{@code{do:} could consider using braces rather than parens, if these were enforceable.
                 (Semi-colons between terms in the @code{do:} will never be enforceable, but will provide a
