@@ -40,7 +40,14 @@
 (require (for-syntax racket syntax/stx))
 
 (provide (except-out (all-from-out racket) #%module-begin)
-         (rename-out [top-level #%module-begin]))
+         (rename-out [top-level #%module-begin])
+         add sub mult div numeq)
+
+(define add +)
+(define sub -)
+(define mult *)
+(define div /)
+(define numeq =)
 
 (define-for-syntax (process-sexp-stream sexp-stream)
   
@@ -363,11 +370,11 @@
              [else
               (raise-syntax-error 'argument-list "not valid syntax" (syntax argdesc))])))]
       [_
-       (raise-syntax-error 'deffun: "not proper syntax")]))
+       (raise-syntax-error 'deffun: "not proper syntax" sexp-stream)]))
   
   (define (process-defstruct: sexp-stream icheck)
-    (syntax-case sexp-stream ()
-      [(defstruct:-kwd struct-name (field-descr ...) rest-of-stream ...)
+    (syntax-case sexp-stream (has:)
+      [(defstruct:-kwd struct-name has: (field-descr ...) rest-of-stream ...)
        (identifier? (syntax struct-name))
        (begin
          (icheck (syntax defstruct:-kwd))
@@ -377,7 +384,7 @@
                    (syntax (define-struct struct-name (fields ...) #:transparent)))
                  (syntax (rest-of-stream ...))))]
       [_
-       (raise-syntax-error 'defstruct: "not proper syntax")]))
+       (raise-syntax-error 'defstruct: "not proper syntax" sexp-stream)]))
 
   (define (process-defvar: sexp-stream icheck)
     (syntax-case sexp-stream (=)
@@ -400,7 +407,7 @@
          [_ true])
        (raise-syntax-error 'defvar: "expected to find = here" #'token)]
       [_
-       (raise-syntax-error 'defvar: "not proper syntax")]))
+       (raise-syntax-error 'defvar: "not proper syntax" sexp-stream)]))
 
   ;; can return false if it isn't finding a definition at the head of the stream
   (define (extract-one-definition sexp-stream icheck)
