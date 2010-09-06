@@ -1,6 +1,6 @@
 #lang racket
 
-; if anything other than elif: or else: shows up in that position of if:, signal error (esp. for elseif:, per Jon Sailor)
+; if anything other than elseif: or else: shows up in that position of if:, signal error (esp. for elseif:, per Jon Sailor)
 
 ; and, or, test, when, unless, let, let*, letrec
 
@@ -52,7 +52,7 @@
 (define-for-syntax (process-sexp-stream sexp-stream)
   
   ; Those that can't be at the beginning of an expression 
-  (define non-expr-keywords '(else: elif: deffun: defstruct: defvar:))
+  (define non-expr-keywords '(else: elseif: deffun: defstruct: defvar:))
   (define expr-keywords '(fun: in: if: do: let: let*: letrec:))
   (define all-keywords (append expr-keywords non-expr-keywords))
   
@@ -200,17 +200,17 @@
     (let*-values ([(test-expr test-rest) (extract-one-expression (stx-cdr sexp-stream) sub-expr-icheck)]
                   [(then-expr then-rest) (extract-one-expression test-rest sub-expr-icheck)])
       (let loop ([rest-stream then-rest]
-                 [elifs empty])
-        (syntax-case rest-stream (elif: else:)
-          [(elif: more ...)
-           (let*-values ([(elif-test-expr elif-test-rest) (extract-one-expression (syntax (more ...)) sub-expr-icheck)]
-                         [(elif-then-expr elif-then-rest) (extract-one-expression elif-test-rest sub-expr-icheck)])
-             (icheck (stx-car rest-stream)) ;; elif: must indent the same as if:
-             (loop elif-then-rest (cons (list elif-test-expr elif-then-expr) elifs)))]
+                 [elseifs empty])
+        (syntax-case rest-stream (elseif: else:)
+          [(elseif: more ...)
+           (let*-values ([(elseif-test-expr elseif-test-rest) (extract-one-expression (syntax (more ...)) sub-expr-icheck)]
+                         [(elseif-then-expr elseif-then-rest) (extract-one-expression elseif-test-rest sub-expr-icheck)])
+             (icheck (stx-car rest-stream)) ;; elseif: must indent the same as if:
+             (loop elseif-then-rest (cons (list elseif-test-expr elseif-then-expr) elseifs)))]
           [(else: more ...)
            (let-values ([(else-expr else-rest) (extract-one-expression (syntax (more ...)) sub-expr-icheck)])
              (icheck (stx-car rest-stream)) ;; else: must indent the same as if:
-             (let ([clauses (cons (list test-expr then-expr) (reverse elifs))])
+             (let ([clauses (cons (list test-expr then-expr) (reverse elseifs))])
                (with-syntax ([((question answer) ...) clauses]
                              [else-answer else-expr])
                  (values (syntax (cond [question answer] ... [else else-answer]))

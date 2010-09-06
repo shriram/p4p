@@ -46,7 +46,7 @@ deffun: memoize (f) =
 deffun: fib(n) =
   if: numeq(n, 0) 
     1
-  elif: numeq(n, 1)
+  elseif: numeq(n, 1)
         1
   else:
         add(fib(sub1(n)), fib(sub(n, 2)))
@@ -56,7 +56,7 @@ defvar: mfib =
     fun: (n) in:
       if: numeq(n, 0)
            1
-      elif: numeq(n, 1)
+      elseif: numeq(n, 1)
            1
       else:
            +(fib(sub1(n)), fib(-(n, 2))))
@@ -71,9 +71,9 @@ defvar: levenshtein =
     fun: (s, t) in:
       if: andalso(empty?(s), empty?(t))
         0
-      elif: empty?(s)
+      elseif: empty?(s)
         length(t)
-      elif: empty?(t)
+      elseif: empty?(t)
         length(s)
       else:
         if: equal?(first(s), first(t))
