@@ -89,7 +89,7 @@ Conditionals:
 deffun: fib(n) =
   if: numeq(n, 0)
     1
-  elif: numeq(n, 1)
+  elseif: numeq(n, 1)
     1
   else:
     add(fib(sub1(n)), fib(sub(n, 2)))
@@ -151,7 +151,7 @@ This results in a pleasant invariant about parenthetical structure. In Racket, S
 @codedisp{
         (+ (memofib (sub1 n)) (memofib (- n 2)))]))))
 }
-whereas the equivalent in P4P (using @code{if:}s and @code{elif:}s in place of Racket's @code{cond}) ends (using the same operators, though P4P also defines @code{add} and @code{sub}) in
+whereas the equivalent in P4P (using @code{if:}s and @code{elseif:}s in place of Racket's @code{cond}) ends (using the same operators, though P4P also defines @code{add} and @code{sub}) in
 @codedisp{
         +(memofib(sub1(n)), memofib(-(n, 2))))
 }
@@ -207,7 +207,7 @@ P4P is implemented entirely using existing high-level Racket tools: it is define
 
 @subsubsection{Avoiding Optional Syntax}
 
-P4P does not have any optional syntax.  I believe this makes it easier to teach people to program: they want clear instructions, not ``You can do this, or you can do that...you can do whatever you want!''  (If they were ready to do whatever they wanted, they wouldn't be asking you.)  These trade-offs are best left to semantic and design levels, not syntax.  The only options in P4P are thus semantic choices: e.g., you can use or leave out @code{elif:} terms in a conditional, but that is a function of your program's logic, not your syntactic whimsy.
+P4P does not have any optional syntax.  I believe this makes it easier to teach people to program: they want clear instructions, not ``You can do this, or you can do that...you can do whatever you want!''  (If they were ready to do whatever they wanted, they wouldn't be asking you.)  These trade-offs are best left to semantic and design levels, not syntax.  The only options in P4P are thus semantic choices: e.g., you can use or leave out @code{elseif:} terms in a conditional, but that is a function of your program's logic, not your syntactic whimsy.
 
 @subsubsection{Avoiding New Spacing Conventions}
 
@@ -270,7 +270,7 @@ There are only three indentation rules in P4P: @slsc{}, and @slgc{}, and @slgec{
   dbl(dbl(8)))
 }
 
-@slsc{} is used more rarely, when we want rigid alignment.  Currently, only @code{if:} uses @slsc{} for its internal keywords (@code{elif:} and @code{else:}).
+@slsc{} is used more rarely, when we want rigid alignment.  Currently, only @code{if:} uses @slsc{} for its internal keywords (@code{elseif:} and @code{else:}).
 
 Finally, @slgec{} was added for internal keywords that are not the same width as the main keyword.  One might want to write
 @codedisp{
@@ -316,7 +316,7 @@ One consequence of the relative laxness of @slgc{}---which a teaching language m
 @codedisp{
 if: test1
     e1
-elif: test2
+elseif: test2
     e2
 else:
     e3
@@ -325,8 +325,8 @@ and
 @codedisp{ 
 if: test1
     e1
-elif: test2
-      e2
+elseif: test2
+        e2
 else:
       e3
 }
