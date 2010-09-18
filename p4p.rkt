@@ -2,7 +2,7 @@
 
 ; if anything other than elseif: or else: shows up in that position of if:, signal error (esp. for elseif:, per Jon Sailor)
 
-; and, or, test, when, unless, let, let*, letrec
+; test, when, unless
 
 ; Test position of in: of fun:
 
@@ -192,7 +192,7 @@
                         body-rest))]
              [else
               (raise-syntax-error 'argument-list "not valid syntax" (syntax argdesc))])))]))
-
+  
   ;; icheck is for the keywords, not sub-expressions; if: has already been checked
   (define (process-if: sexp-stream icheck)
     (define sub-expr-icheck (check-indent SLGC (stx-car sexp-stream)))
@@ -217,19 +217,34 @@
                          else-rest))))]
           [_ (raise-syntax-error 'if: "expected to see a complete body" sexp-stream)]))))
   
+  (define (process-and/or: p4p-construct racket-construct sexp-stream icheck)
+    (syntax-case sexp-stream () ;; _ is and: or or:
+      [(_ (body ...) rest-of-stream ...)
+       ; guard
+       (let ([paren (syntax-property (stx-car (stx-cdr sexp-stream)) 'paren-shape)])
+         (and paren (char=? paren #\{)))
+       ; RHS
+       (let ([body-exprs (process-expr-sequence (syntax (body ...)) icheck)])
+         (with-syntax ([(body ...) body-exprs]
+                       [construct-kwd racket-construct])
+           (values (syntax (construct-kwd body ...))
+                   (syntax (rest-of-stream ...)))))]
+      [(_ (body ...) rest-of-stream ...)
+       (raise-syntax-error p4p-construct "expected to find {braces} after keyword" sexp-stream)]))
+
   (define (process-do: sexp-stream icheck)
     (syntax-case sexp-stream () ;; _ is do:
       [(_ (body ...) rest-of-stream ...)
-
+       ; guard
        (let ([paren (syntax-property (stx-car (stx-cdr sexp-stream)) 'paren-shape)])
          (and paren (char=? paren #\{)))
-
-       (let ([body-exprs (process-expr-sequence (syntax (body ...)) DUMMY-ICHECK)])
+       ; RHS
+       (let ([body-exprs (process-expr-sequence (syntax (body ...)) icheck)])
          (with-syntax ([(body ...) body-exprs])
            (values (syntax (begin body ...))
                    (syntax (rest-of-stream ...)))))]
       [(_ (body ...) rest-of-stream ...)
-       (raise-syntax-error 'do "expected to find {braces} after keyword" sexp-stream)]))
+       (raise-syntax-error 'do: "expected to find {braces} after keyword" sexp-stream)]))
   
   ;; NOTE: Assumes first arg has been taken care of.
   ;; NOTE: Assumes function position's indentation has already been checked.
@@ -270,7 +285,8 @@
   ;; This is because we demand that expression sequences have a delimiter,
   ;; which enables us to invoke process-expr-sequence on just the sub-stream
   ;; before the delimiter.
-  (define (process-expr-sequence sexp-sub-stream icheck)
+
+  #;(define (process-expr-sequence sexp-sub-stream icheck)
     (if (stx-null? sexp-sub-stream)
         empty
         (let-values ([(one-exp rest-sub-stream)
@@ -278,10 +294,28 @@
           (cons one-exp
                 (process-expr-sequence rest-sub-stream icheck)))))
 
+  (define (process-expr-sequence sexp-sub-stream icheck)
+    (define process-first extract-one-expression)
+    (define (process-not-first sexp-stream)
+      (syntax-case sexp-stream (unquote)
+        [() (values empty sexp-stream)]
+        [((unquote stuff) other-stuff ...)
+         (extract-one-expression #'(stuff other-stuff ...) icheck)]
+        [_ (raise-syntax-error 'expression-sequence "expected to find a comma at the beginning" sexp-stream)]))
+    (if (stx-null? sexp-sub-stream)
+        empty
+        (let-values ([(first rest-stream) (process-first sexp-sub-stream icheck)])
+          (cons first
+                (let loop ([sexp-stream rest-stream])
+                  (if (stx-null? sexp-stream)
+                      empty
+                      (let-values ([(one-exp rest-sub-stream) (process-not-first sexp-stream)])
+                        (cons one-exp (loop rest-sub-stream)))))))))
+
   (define (extract-one-expression sexp-stream icheck)
     (if (stx-null? sexp-stream)
         (raise-syntax-error 'looking-for-expression "program ended prematurely")
-        (syntax-case (stx-car sexp-stream) (fun: if: do: quote let: let*: letrec:)
+        (syntax-case (stx-car sexp-stream) (fun: if: do: and: or: quote let: let*: letrec:)
 
           [let:
            (begin
@@ -306,7 +340,15 @@
           [do:
            (begin
              (icheck (stx-car sexp-stream))
-             (process-do: sexp-stream (check-indent SLSC (stx-car sexp-stream))))]
+             (process-do: sexp-stream (check-indent SLGC (stx-car sexp-stream))))]
+          [and:
+           (begin
+             (icheck (stx-car sexp-stream))
+             (process-and/or: 'and: 'and sexp-stream (check-indent SLGC (stx-car sexp-stream))))]
+          [or:
+           (begin
+             (icheck (stx-car sexp-stream))
+             (process-and/or: 'or: 'or sexp-stream (check-indent SLGC (stx-car sexp-stream))))]
           [(quote e)
            (process-const (syntax e) (stx-cdr sexp-stream) icheck)]
           [(e ...)  ;; Function position is itself a non-identifier expression

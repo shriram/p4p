@@ -4,6 +4,16 @@ defvar: this-better-be-6 = add(1, 2, 3)
 defvar: this-better-be-0 = add()
 ;; This will produce a run-time error: /()
 
+deffun: tryand(x) =
+  and: { false, 
+         /(1, x) }
+equal?(tryand(0), false)
+
+deffun: tryor(x) =
+  or: {false, false, x}
+equal?(tryor(false), false)
+equal?(tryor(true), true)
+
 deffun: five() = 5
 deffun: six(x) = 6
 deffun: iden(x) = x
@@ -37,7 +47,7 @@ deffun: memoize (f) =
     if: empty?(lookup)
         do: {
             set-box!(memo-table,
-                     cons (make-memo (args, apply(f, args)), unbox(memo-table)))
+                     cons (make-memo (args, apply(f, args)), unbox(memo-table))),
             apply(f, args)
         }
     else:
