@@ -111,7 +111,7 @@ deffun: memoize (f) =
           do: (
             set-box!(memo-table,
                      cons (make-memo (args, apply(f, args)),
-                           unbox(memo-table)))
+                           unbox(memo-table))),
             apply(f, args))
     else:
           memo-ans(first(lookup))
@@ -231,10 +231,10 @@ There are many syntactic embellishments in P4P.
                 does not equal the body, but rather is bound in it.  The choice of @code{in:} is thus not entirely whimsical,
                 but is very open to improvement.  Likewise, there is no @code{=} in @code{defstruct:}, but instead @code{has:}, to emphasize that a structure @italic{has} the following fields.}
 
-           @item{@code{do:} could consider using braces rather than parens, if these were enforceable.
-                (Semi-colons between terms in the @code{do:} will never be enforceable, but will provide a
-                pleasing touch to traditionalists---who might, however, accidentally put two commands on
-                one line and be surprised to find the second one does not execute.)}
+           @item{@code{do:} uses braces (rather than parens) to
+	        delimit its sub-terms.
+                (Semi-colons between terms in the @code{do:} will
+                never be enforceable, so @code{do:} uses commas instead.)}
           
           @item{Using the @tt{def}- prefix for the definition constructs leaves open @tt{fun:} for anonymous functions.}
           
@@ -253,7 +253,10 @@ Some constructs, such as Racket's @tt{cond}, @tt{begin}, and @tt{when}, contain 
 
 @subsubsection{Avoiding Closing Delimiters}
 
-Nothing in the language design precludes closing delimiters.  However, because parsing is always predictable, there is no @italic{need} for them, either.  Offering them could improve error reporting.
+Nothing in the language design precludes closing delimiters.  However,
+because parsing is always predictable, there is no @italic{need} for
+them, either (except for variterm constructs).  Offering them could
+improve error reporting.
 
 @subsubsection{Not Specifying the Indentation of Parenthetical Pairs}
 
@@ -342,7 +345,7 @@ Happily, Racket provides a middle-ground: files without explicit wrappers can be
 
 This mapping enables the P4P parser to leverage the Racket macro system to bootstrap.  P4P removes tokens sequentially, using a slack term in every pattern to match the rest of the stream; each construct's parser returns a tree and what remains of the stream after it is done processing.
 
-Oh, and commas.  Of course, Racket converts commas to @code{unquote}.  In Racket, the @code{unquote} is followed by a single tree; in P4P, it is followed by an arbitrary @italic{undelimited} expression.  So P4P lets Racket turn commas into @code{unquote}s, and then simply returns the subsequent tree (in Racket's terms) to the front of the token stream, for continued P4P parsing. 
+Oh, and commas.  Of course, the Racket tokenizer converts commas to @code{unquote}.  In Racket, the @code{unquote} is followed by a single tree; in P4P, it is followed by an arbitrary @italic{undelimited} expression.  So P4P lets Racket turn commas into @code{unquote}s, and then simply returns the subsequent tree (in Racket's terms) to the front of the token stream, for continued P4P parsing. 
 
 @section{Error Reporting}
 
@@ -357,7 +360,7 @@ Finally, one known problematic case is this: when a comma-separated list fails t
 
 @section{Syntax Extensions}
 
-It would be easy to add new constructs such as @code{or:} and @code{and:}, @code{provide:}, @code{test:}, @code{const:} (to distinguish from @code{defvar:}), and so on.
+It would be easy to add new constructs such as @code{provide:}, @code{test:}, @code{defconst:} (to distinguish from @code{defvar:}), and so on.
 
 The current design of P4P also does not preclude the addition of syntactic enhancements such as type declarations, default argument values, and so on.  It is presumably also possible to add support for Racket keywords and reader extensions.
 
