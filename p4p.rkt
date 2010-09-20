@@ -39,6 +39,10 @@
 
 (require (for-syntax racket syntax/stx))
 
+(require (only-in lang/htdp-advanced check-expect)
+         (only-in test-engine/scheme-tests run-tests display-results))
+(provide check-expect)
+
 (provide (except-out (all-from-out racket) #%module-begin)
          (rename-out [top-level #%module-begin])
          add sub mult div numeq)
@@ -246,6 +250,24 @@
       [(_ (body ...) rest-of-stream ...)
        (raise-syntax-error 'do: "expected to find {braces} after keyword" sexp-stream)]))
   
+  (define (process-test: sexp-stream icheck)
+    (syntax-case sexp-stream () ;; _ is test:
+      [(_ test-expr-and-rest ...)
+       (let-values ([(test-expr test-rest-stream)
+                     (extract-one-expression #'(test-expr-and-rest ...) icheck)])
+         (syntax-case test-rest-stream (=?)
+           [(=? should-be-and-rest ...)
+            (let-values ([(should-be-expr should-be-rest-stream)
+                          (extract-one-expression #'(should-be-and-rest ...) icheck)])
+              (with-syntax ([the-test test-expr]
+                            [the-should-be should-be-expr])
+                (values #'(check-expect the-test the-should-be)
+                        should-be-rest-stream)))]
+           [_
+            (raise-syntax-error 'test: "expected to find =? followed by an expression" test-rest-stream)]))]
+      [_
+       (raise-syntax-error 'test: "malformed use" sexp-stream)]))
+  
   ;; NOTE: Assumes first arg has been taken care of.
   ;; NOTE: Assumes function position's indentation has already been checked.
   ;;       The provided icheck is for arguments.
@@ -315,7 +337,7 @@
   (define (extract-one-expression sexp-stream icheck)
     (if (stx-null? sexp-stream)
         (raise-syntax-error 'looking-for-expression "program ended prematurely")
-        (syntax-case (stx-car sexp-stream) (fun: if: do: and: or: quote let: let*: letrec:)
+        (syntax-case (stx-car sexp-stream) (fun: if: do: and: or: quote let: let*: letrec: test:)
 
           [let:
            (begin
@@ -349,6 +371,10 @@
            (begin
              (icheck (stx-car sexp-stream))
              (process-and/or: 'or: 'or sexp-stream (check-indent SLGC (stx-car sexp-stream))))]
+          [test:
+           (begin
+             (icheck (stx-car sexp-stream))
+             (process-test: sexp-stream (check-indent SLGC (stx-car sexp-stream))))]
           [(quote e)
            (process-const (syntax e) (stx-cdr sexp-stream) icheck)]
           [(e ...)  ;; Function position is itself a non-identifier expression
@@ -503,4 +529,4 @@
      (with-syntax
          ([(processed-bodies ...)
            (process-sexp-stream (syntax->list #'(bodies ...)))])
-       (syntax (#%module-begin processed-bodies ...)))]))
+       (syntax (#%module-begin processed-bodies ... (run-tests) (display-results))))]))

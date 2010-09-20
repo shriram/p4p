@@ -1,18 +1,22 @@
 #lang s-exp "p4p.rkt"
 
+test: 4 =? 4
+
 defvar: this-better-be-6 = add(1, 2, 3)
+test: this-better-be-6 =? 6
 defvar: this-better-be-0 = add()
+test: this-better-be-0 =? 0
 ;; This will produce a run-time error: /()
 
 deffun: tryand(x) =
   and: { false, 
          /(1, x) }
-equal?(tryand(0), false)
+test: tryand(0) =? false
 
 deffun: tryor(x) =
   or: {false, false, x}
-equal?(tryor(false), false)
-equal?(tryor(true), true)
+test: tryor(false) =? false
+test: tryor(true) =? true
 
 deffun: five() = 5
 deffun: six(x) = 6
@@ -95,27 +99,27 @@ defvar: levenshtein =
            )
    )
     
-numeq(levenshtein(string->list("kitten"), string->list("sitting")), 3)
-numeq(levenshtein(string->list("gumbo"), string->list("gambol")), 2)
-numeq(levenshtein(string->list("acgtacgtacgt"), string->list("acatacttgtact")), 4)
+test: levenshtein(string->list("kitten"), string->list("sitting")) =? 3
+test: levenshtein(string->list("gumbo"), string->list("gambol")) =? 2
+test: levenshtein(string->list("acgtacgtacgt"), string->list("acatacttgtact")) =? 4
 
 deffun: g(a, b, c) = +(a, b, c)
-numeq(g(1,2,3), 6)
+test: g(1,2,3) =? 6
 
 deffun: h args = args
 defvar: k =
   fun: args in: args
 defvar: p =
   fun: (a, b) in: +(a, b)
-equal?(k(), empty)
-equal?(k(1, 2), list(1, 2))
-numeq(p(1, 2), 3)
+test: k() =? empty
+test: k(1, 2) =? list(1, 2)
+test: p(1, 2) =? 3
 
 "next three outputs should be two procedures and an empty list"
 levenshtein
 k
 k()
-equal?(k(), empty)
+test: k() =? empty
 
 ;; d/dx : (R -> R) -> (R -> R)
 deffun: d/dx(f) =
@@ -126,8 +130,8 @@ deffun: d/dx(f) =
         delta)
 
 defvar: d/dx-of-square = d/dx(fun: (x) in: *(x,x))
-numeq(round(d/dx-of-square(10)), 20.0)
-numeq(round(d/dx-of-square(25)), 50.0)
+test: round(d/dx-of-square(10)) =? 20
+test: round(d/dx-of-square(25)) =? 50
 
 "next output should be 4"
 +(1,
@@ -145,13 +149,14 @@ fun: (x) in:
     1
   else: 2
 
-numeq(
+test: 
   +(1, 2,
     dbl(4),
-    dbl(dbl(8))),
-  43)
+    dbl(dbl(8)))
+=? 
+  43
 
-equal?(first(list("a", "b")), "a")
+test: first(list("a", "b")) =? "a"
 
 deffun: len(l) =
   if: empty?(l)
@@ -159,12 +164,12 @@ deffun: len(l) =
   else:
     add1(len(rest(l)))
     
-numeq(length(list(1,2,3)), 3)
+test: length(list(1,2,3)) =? 3
 
 defstruct: pt has:
  (x,
   y)
-equal?(make-pt(1, 2), make-pt(1, 2))
+test: make-pt(1, 2) =? make-pt(1, 2)
 
 deffun: mymap(f, l) =
   if: empty?(l)
@@ -172,26 +177,27 @@ deffun: mymap(f, l) =
   else:
     cons(f(first(l)), mymap(f, rest(l)))
 
-equal?(mymap(add1, list(1, 2, 3)), list(2, 3, 4))
+test: mymap(add1, list(1, 2, 3)) =? list(2, 3, 4)
 
 defvar: l = list(1,2,3)
 
-"next output should be 5"
-let:
-  x = 3,
-  y = 2
- in:
-  +(x, y)
+test:
+  let:
+    x = 3,
+    y = 2
+  in:
+    +(x, y)
+=? 5
 
-"next output should be 6"
-let*: x = 3, y = x in: +(x, y)
+test: let*: x = 3, y = x in: +(x, y) =? 6
 
-"next output should be list of false, true"
-letrec: even = ;; perversely written as a one-liner
+test:
+  letrec: even = ;; perversely written as a one-liner
                fun: (n) in: if: zero?(n) true else: odd?(sub1(n)),
-        odd = fun: (n) in:
-                if: zero?(n)
-                  false
-                else:
-                  odd?(sub1(n))
- in: list(odd?(10), even?(10))
+          odd = fun: (n) in:
+                  if: zero?(n)
+                    false
+                  else:
+                    odd?(sub1(n))
+  in: list(odd?(10), even?(10))
+=? list(false, true)
