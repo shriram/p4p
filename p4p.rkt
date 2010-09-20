@@ -2,7 +2,8 @@
 
 ; if anything other than elseif: or else: shows up in that position of if:, signal error (esp. for elseif:, per Jon Sailor)
 
-; test, when, unless
+; when, unless
+; check-expect is now test:, but check-within, etc. are missing
 
 ; Test position of in: of fun:
 

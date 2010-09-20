@@ -75,7 +75,6 @@ defvar: mfib =
       else:
            +(fib(sub1(n)), fib(-(n, 2))))
 
-;; If the function position is a non-identifier expression, wrap it in parens.
 defvar: this-better-be-9 = {fun: (n) in: *(n, n)}(3)
 
 deffun: andalso (a, b) = if: a b else: false
