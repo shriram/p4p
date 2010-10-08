@@ -1,5 +1,9 @@
 #lang racket
 
+#| This produces a bad error message:
+devar: mt-heap = make-mt()
+|#
+
 ; set-box!(value, (t))
 ; [should have been set-box!(value, t())]
 ; produces internal error:
