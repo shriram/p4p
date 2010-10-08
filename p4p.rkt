@@ -1,5 +1,10 @@
 #lang racket
 
+; set-box!(value, (t))
+; [should have been set-box!(value, t())]
+; produces internal error:
+; car: expects argument of type <pair>; given '()
+
 ; if anything other than elseif: or else: shows up in that position of if:, signal error (esp. for elseif:, per Jon Sailor)
 
 ; when, unless
@@ -40,9 +45,8 @@
 
 (require (for-syntax racket syntax/stx))
 
-(require (only-in lang/htdp-advanced check-expect)
+(require (only-in lang/htdp-advanced check-expect : signature predicate)
          (only-in test-engine/scheme-tests run-tests display-results))
-(provide check-expect)
 
 (provide (except-out (all-from-out racket) #%module-begin)
          (rename-out [top-level #%module-begin])
@@ -133,7 +137,7 @@
     (if (stx-null? sexp-stream)
         empty
         (cons (process-first sexp-stream)
-              (reverse (process-rest (stx-cdr sexp-stream))))))
+              (process-rest (stx-cdr sexp-stream)))))
 
   (define (process-let/let*/letrec: p4p-construct racket-construct outer-sexp-stream icheck)
     (define sub-icheck (check-indent SLGC (stx-car outer-sexp-stream)))
@@ -477,6 +481,79 @@
        (raise-syntax-error 'defvar: "expected to find = here" #'token)]
       [_
        (raise-syntax-error 'defvar: "not proper syntax" sexp-stream)]))
+  
+  (define (process-defsigpred: sexp-stream icheck)
+    (syntax-case sexp-stream (=)
+      [(defsigpred:-kwd s-name = rest-of-stream ...)
+       (identifier? #'v-name)
+       (let-values ([(body-expr body-rest)
+                     (extract-one-expression #'(rest-of-stream ...)
+                                             (check-indent SLGC #'defsigpred:-kwd))])
+         (icheck #'defsigpred:-kwd)
+         ((check-indent SLGC #'defsigpred:-kwd) #'s-name)
+         (with-syntax ([body body-expr])
+           (values (syntax (define v-name (signature (predicate body))))
+                   body-rest)))]
+      [(_ v-name rest-of-stream ...)
+       (not (identifier? #'v-name))
+       (raise-syntax-error 'defsigpred: "not a variable" #'v-name)]
+      [(_ v-name token rest-of-stream ...)
+       (syntax-case (syntax token) (=) ;; This syntax-case is the GUARD
+         [= false]
+         [_ true])
+       (raise-syntax-error 'defsigpred: "expected to find = here" #'token)]
+      [_
+       (raise-syntax-error 'defsigpred: "not proper syntax" sexp-stream)]))
+
+  (define (process-sign: sexp-stream icheck)
+
+    (define (parse-compound-sig something) 'nothing)
+
+    (define (parse-sig sub-stream)
+      (syntax-case sub-stream (-> unquote)
+        [{sig-name}
+         (identifier? #'sig-name)
+         #'sig-name]
+        [{-> rest ...}
+         (with-syntax ([e (parse-sig #'(rest ...))])
+           #'(-> e))]
+        [{op (arg ...) rest ...}
+         (identifier? #'op)
+         (with-syntax ([hd (parse-compound-sig #'(op (arg ...)))]
+                       [tl (parse-sig #'(rest ...))])
+           #'(hd . tl))]
+        [{sig-name more ...}
+         (identifier? #'sig-name)
+         'do-something]
+        [_
+         (raise-syntax-error 'sign: "not proper syntax" sub-stream)]))
+
+    ;; body of process-sign:
+    (syntax-case sexp-stream (is:)
+      [(sign:-kwd v-name is: {signature ...} rest-of-stream ...)
+       (and (identifier? #'v-name)
+            (let ([paren (syntax-property (stx-car (stx-cdr sexp-stream)) 'paren-shape)])
+              (and paren (char=? paren #\{))))
+       (let ([sig-out (parse-sig #'{signature ...})])
+         (icheck #'sign:-kwd)
+         ((check-indent SLGC #'sign:-kwd) #'v-name)
+         (with-syntax ([signature sig-out])
+           (values #'(: v-name signature)
+                   #'(rest-of-stream ...))))]
+      [(_ v-name is: {signature ...} rest-of-stream ...)
+       (not (identifier? #'v-name))
+       (raise-syntax-error 'sign: "not a variable" #'v-name)]
+      [(_ v-name is: (signature ...) rest-of-stream)
+       (let ([paren (syntax-property (stx-car (stx-cdr sexp-stream)) 'paren-shape)])
+         (and paren (not (char=? paren #\{))))
+       (raise-syntax-error 'sign: "signature must be in {brackets}" #'(signature ...))]
+      [(_ v-name token rest-of-stream ...)
+       (syntax-case (syntax token) (is:) ;; This syntax-case is the GUARD
+         [is: true]
+         [_ false])
+       (raise-syntax-error 'sign: "expected to find is: here" #'token)]
+      [_
+       (raise-syntax-error 'sign: "not proper syntax" sexp-stream)]))
 
   ;; can return false if it isn't finding a definition at the head of the stream
   (define (extract-one-definition sexp-stream icheck)
@@ -484,13 +561,17 @@
         (raise-syntax-error sexp-stream "program ended prematurely while expecting a definition or expression")
         (begin
           (icheck (stx-car sexp-stream))
-          (syntax-case (stx-car sexp-stream) (deffun: defvar: defstruct:)
+          (syntax-case (stx-car sexp-stream) (deffun: defvar: defstruct: defsigpred: sign:)
             [deffun:
               (process-deffun: sexp-stream icheck)]
             [defvar:
               (process-defvar: sexp-stream icheck)]
             [defstruct:
               (process-defstruct: sexp-stream icheck)]
+            [defsigpred:
+              (process-defsigpred: sexp-stream icheck)]
+            [sign:
+             (process-sign: sexp-stream icheck)]
             [_
              (values false sexp-stream)]))))
   

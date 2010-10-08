@@ -56,6 +56,14 @@ deffun: memoize (f) =
         }
     else:
           memo-ans(first(lookup))
+          
+defstruct: node has: (v, s, l, r)
+defvar: a-node = make-node(1, 2, 3, 4)
+test: node-v(a-node) =? 1
+test: node-s(a-node) =? 2
+test: node-l(a-node) =? 3
+test: node-r(a-node) =? 4
+
 
 deffun: fib(n) =
   if: numeq(n, 0) 
