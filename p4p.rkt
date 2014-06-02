@@ -424,7 +424,9 @@ devar: mt-heap = make-mt()
                        [_
                         ;; identifier case!
                         (process-const (stx-car sexp-stream) (stx-cdr sexp-stream) icheck)])
-                     (raise-syntax-error 'application "not beginning with arguments" (stx-car (stx-cdr sexp-stream))))))])))
+                     (if (stx-null? (stx-cdr sexp-stream))
+                         (raise-syntax-error 'application "no identifier preceding parentheses" sexp-stream)
+                         (raise-syntax-error 'application "not beginning with arguments" (stx-car (stx-cdr sexp-stream)))))))])))
 
   (define (process-deffun: sexp-stream icheck)
     (syntax-case sexp-stream (=)
