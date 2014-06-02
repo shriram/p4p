@@ -165,13 +165,21 @@ test:
 
 test: first(list("a", "b")) =? "a"
 
-deffun: len(l) =
+deffun: lenrec(l) =
   if: empty?(l)
     0
   else:
-    add1(len(rest(l)))
+    add1(lenrec(rest(l)))
     
-test: length(list(1,2,3)) =? 3
+test: lenrec(list(1,2,3)) =? 3
+
+deffun: lentr(l, acc) =
+  if: empty?(l)
+    acc
+  else:
+    lentr(rest(l), add1(acc))
+    
+test: lentr(list(1,2,3), 0) =? 3
 
 defstruct: pt has:
  (x,
